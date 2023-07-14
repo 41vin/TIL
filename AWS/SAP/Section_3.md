@@ -156,3 +156,174 @@
     - AWS recommends using Cognito instead
 4. **GetSessionToken**: for MFA, from a user or AWS account root user
 5. **GetFederationToken**: obtain temporary creds for a federated user, usually a proxy app that will give the creds to a distributed app inside a corporate network
+
+
+<br><br><br>
+
+# Identity Federation in AWS
+
+- Give users outside of AWS permissions to access AWS resources in your account
+- **You don't need to create IAM Users(user management is outside AWS)**
+- Use cases:
+  - A corporate has its own idetity system (e.g., Active Directory)
+  - Web/Mobile application that needs access to AWS resources
+
+<br>
+
+- Identity Federation can have many flavors:
+  - SAML 2.0
+  - Custom Identity Broker
+  - Web Identity Federation With(out) Amazon Cognito
+  - Single Sign-On (SSO)
+
+<br><br><br>
+
+# SAML 2.0 Federation
+
+- Security Assertion Markup Language (SAML 2.0
+- Open standard used by many identity providers(e.g., ADFS)
+  - Supports integration with Microsoft Active Directory Federations Services(ADFS)
+  - Or any SAML 2.0-compatible idPs with AWS
+- Access to AWS Console, AWS CLI, or AWS API using temporary credentials
+  - No need to create IAM Users for each of your employees
+  - Need to setup a trust between AWS IAM and SAML 2.0 Identity Provider (both ways)
+
+- Under-the-hood: Uses the STS API **AssumeRoleWithSAML**
+- SAML 2.0 Federation is the "old way", **Amazon Single Sign-On (AWS SSO)** Federation is the new managed and simpler way
+
+<br><br><br>
+
+# Custom Identity Broker Application
+
+- Use only Identity Provider is NOT compatible with SAML 2.0
+- The Identity Broker Authenticates users & requests temporary credentials from AWS
+- **The Identity Broker must determine the appropriate IAM Role**
+- Uses the STS API **AssumeRole** or **GetFederationToken**
+
+<br><br><br>
+
+<div style="display: flex;">
+  <div style="flex-basis: 50%;">
+  <h3>Web Identity Federation - With Cognito</h3>
+    <ul>
+    <li>Preferred over for Web Identity Federation</li>
+        <ul>
+        <li> Create IAM Roles using Cognito with the least privileged needed</li>
+        <li> Build trust between the OIDC IdP and AWS</li>
+        </ul>
+    <li>Cognito benefits:</li>   
+        <ul>
+        <li>Supports anonymous users</li>
+        <li>Supports MFA</li>
+        <li>Data Synchronization</li>
+        </ul>
+    <li>Cognito replaces a Token Vending Machine(TVM)</li>
+  </div>
+  
+  <div style="flex-basis: 50%;">
+  <h3>Web Identity Federation - Without Cognito</h3>
+    <ul>
+      <li>Not recommended by AWS</li>
+        <ul>
+          <li>use Cognito instead</li>
+        </ul>  
+  </div>
+</div>
+
+<br><br><br>
+
+# Web Identity Federation - IAM Policy
+
+- After being authenticated with Web Identity Federation, you can Identity Federaiton, you can identify the user with an IAM policy variagle
+- Examples:
+  - cognito-identity.amazonaws.com:sub
+  - www.amazon.com:user_id
+  - graph.facebook.com:id
+  - accounts.google.com:sub
+
+<br><br><br>
+
+# What is Microsoft Active Directory (AD)?
+
+- Found on any Windows Server with AD Domain Services
+- Database of **objects**: User Accounts, Computers, Printers, File Shares, Security Groups
+- Centralized security management, create account, assign permissions
+- Objects are organized in **trees**
+- A group of trees is a **forest**
+
+<br><br><br>
+
+# What is ADFS (AD Federation Services)?
+  
+- ADFS provides Single Sign-On across applications
+- SAML across 3rd party: AWS Console, Dropbox, Office365 etc...
+
+<br><br><br>
+
+# AWS Directory Services
+
+- AWS Managed Microsoft AD
+  - Create your own AD in AWS, manage users locally, supports MFA
+  - Establish "trust" connections with your on-premises AD
+- AD Connector
+  - Directory Gateway(proxy) to redirect to on-premises AD, supports MFA
+  - Users are managed on the on-premise AD
+- Simple AD
+  - AD-compatible managed directory on AWS
+  - Cannot be joined with on-premise AD
+
+<br><br><br>
+
+# AWS Directory Services 
+  ## 1. AWS Managed Microsoft AD
+
+- Managed Servie: Microsoft AD in your AWSVPC
+- EC2 Windows Instance:
+  - EC2 Windows instances can join the domain and run traditional AD applications (sharepoint,etc)
+  - Seamlessly Domain Join Amacon EC2 Instances from Multiple Accounts & VPCs
+- Integrations:
+  - RDS for SQL Server; AWS Workspaces, Quicksight ...
+  - AWS SSO to provide access to 3rd party applications
+- Standalone repository in AWS or joined to on-premise AD
+- Multi AZ deployment of AD in 2 AZ, # of DC(Domain Controllers) can be increased for scaling
+- Automated backups
+- Automated Multi-Region replication of your directory
+
+
+### Connect to on-premises AD
+
+- Ability to connect your on-premises Active Directory to AWS Managed MicrosoftAD
+- Must establish a Directory Connect(DX) or VPN connection
+- Can setup three kinds of forest trusts:
+  - **One-way trust**:<br>
+  AWS => on-premises 
+  - **One-way trust**:<br>
+  on-premises => AWS
+  - **Two-way forest trust**:<br>
+  AWS <-> on-premises
+- Forest trust is different than synchronization
+  
+### Solution Architecture: Active Directory Replication
+- You may want to create a replica of your AD on EC2 in the cloud to minimize latency of in case DX or VPN goe sdown
+- Establish trust between the AWS Managed Microsoft AD and EC2
+
+<br><br>
+
+## 2. AD Connector
+
+- **AD Connector** is a directory gateway to redirect directory requests to your on-premises Microsoft Active Directory
+- No caching capability
+- Manage users soley on-premises, no possibility of setting up a trust
+- VPN or Direct Connect
+- Doesn't work with SQL Server, doesn't do seamless joining, can't share directory
+
+
+<br><br>
+
+## 3. Simple AD
+
+- **Simple AD** is an inexpensive Active Directory-compatible service with the common directory features.
+- Supports joining EC2 instances, manage users and groups
+- Does not support MFA, RDS SQL server, AWS SSO
+- Small: 500 users, large:5000 users
+- Powered by Samba 4, compatible with Microsoft AD
