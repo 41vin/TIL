@@ -438,3 +438,134 @@
 - Identity providers
   - Built-in identity store in IAM Identity Center
   - 3rd party: Active Directory(AD), OneLogin, Okta ...
+<br><br><br>
+
+# AWS IAM Identity Center Fine-grained Permissions and Assignments
+
+- Multi-Account Permissions
+  - Manage access acrss AWS accounts in your AWS Organization
+  - Permission Sets - a collection of one or more IAM Policies assigned to users and groups to define AWS access
+- Application Assignments
+  - SSO access to many SAML 2.0 business applications (Salesforce, Box, Microsoft 365, ...)
+  - Provide required URLs, certificates, and metadata
+- Attribute-Based Access Control(ABAC)
+  - Fine-grained permissions based on users' attributes stored in IAM Identity Center Identity Store
+  - Example: cost, center, title, locale, ...
+  - Use case: Define permissions once, then modify AWS access by changing the attributes
+
+
+# AWS Control Tower
+
+- Easy way to **set up and govern a secure and compliant multi-account AWS environment** based on best practices
+- Benefits:
+  - Automate the set up of your environment in a few clicks
+  - Automate ongoing policy management using guardrails
+  - Detect policy violations and remediate them
+  - Monitor compliance through an interactive dashboard
+- AWS Control Tower runs on top of AWS Organizations:
+  - It automatically sets up AWS Organizations to organize accounts and implement SCPs (Service Control Policies)
+<br><br><br>
+
+# AWS Control Tower - Account Factory
+
+- Automates account provisioning and deployments
+- Enables you to create pre-approved baselines and configuration options for AWS accounts in your organization (e.g., VPC default configuration, subnets, region, ...)
+- Uses AWS Service Catalog to provision new AWS accounts
+<br><br><br>
+
+# AWS Control Tower - Detect and Remediate Policy Violations
+
+- Guardrail
+  - Provides ongoing governance for your Control Tower environment (AWS Accounts)
+  - **Preventive - using SCPs** (e.g., Disallow Creation of Access Keys for the Root User)
+  - **Detective- using AWS Config** (e.g., Detect Whether MFA for the Root User is Enabled)
+  - Example: identify non-compliant resources (e.g., untagged resources)
+<br><br><br>
+
+# AWS Control Tower - Guardrails Levels
+
+- Mandatory
+  - Automatically enabled and enforced by AWS Control Tower
+  - Example: Disallow public Read access to the Log Archive account
+
+- Strongly Recommended
+  - Based on AWS best practices (optional)
+  - Example: Enable encryption for EBS volumes attached to EC2 instances
+
+- Elective
+  - Commonly used by enterprises (optional)
+  - Example: Disallow delete actions without MFA in S3 buckets
+<br><br><br>
+
+# AWS Resource Access Manager (RAM)
+
+- Share AWS resources that you own with other AWS accounts
+- Share with any account or within your Organizations
+- Avoid resource dulication
+- **VPC Subnets**
+  - Allow to have all the resources launched in the same subnets
+  - Must be from the same AWS Organizations
+  - Cannot share security groups and default VPC
+  - Participants can manage their own resources in there
+  - Participants can't view, modify, delete resources that belong to other participants or the owner
+- **AWS Transit Gateway**
+- **Route 53(Resolver Rules, DNS Firewall Rule Groups)**
+- **License Manager Configurations**
+- **Aurora DB Cluster**
+- **ACM Private Certificate Authority**
+- **CodeBuild Project**
+- **EC2(Dedicted Hosts, Capacity Reservation)**
+- **AWS GLue (Catalog, Database, Table)**
+- **AWS Network Firewall Policies**
+- **AWS Resource Groups**
+- **Systems Manager Incident Manager (Contaacts, Response Plans)**
+- **AWS Outposts(Outpost, Site)**
+<br><br><br>
+
+# Resource Access Manager - VPC example
+
+- Each account
+  - is responsible for its own resources
+  - cannot view, modify or delete other resources in other accounts
+- Network is shared so ...
+  - Anything deployed in the VPC can talk to other resources in the VPC
+  - Applications are accessed easily across accounts, **using private IP**
+  - Security groups from other accounts can be referenced for maximum security
+- Use cases
+  - Applications within the same trust boundaries
+  - Applications with a high degree of interconnectivity
+<br><br><br>
+
+# Resource Access Manager Managed Prefix List
+
+- A set of one or more CIDR blocks
+- Makes it easier to configure and maintain Security Groups and Route Tables
+- **Customer-Managed Prefix List**
+  - SEt of CIDRs that you define and manage by you
+  - Can be shared with other AWS accounts or AWS Organization
+  - Modify to update many security groups at once
+- **AWS-Managed Prefix List**
+  - Set of CIDRs for AWS services
+  - You can't create, modify, share, or delete them
+<br><br><br>
+
+# Resource Access Manager Route 53 Outbound Resolver
+
+- Helps you scale forwarding rules to your DNS in case you have multiple accoutns and VPC
+<br><br><br>
+
+# Summary of Identity & Federation
+
+- Users and Accounts all in AWS
+- AWS Organizations
+- AWS ControlTower to setup secure & complaint multi-account AWS environment (best practices)
+- Federation with SAML
+- Federation without SAML with a custm IdP (**GetFederationToken**)
+- AWS Single Sign-On to connect to multiple AWS Accounts(Organization) and SAML apps
+- Web Identity Federation (not recommended)
+- Cognito for most web and mobile applications(has anonymous node, MFA)
+- AWS Directory Service:
+  - **Managed Microsoft AD** - standalone or setup trust AD with on-premises, has MFA, seamless join, RDS integration
+  - **AD Connector** - proxy requests to on-premises
+  - **Simiple AD** - standalone & cheap AD-compatible with no MFA, noadvanced capabilities
+- AWS RAM to share resources (example VPC subnets)
